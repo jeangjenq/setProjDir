@@ -12,14 +12,50 @@ def nodeWithFile():
     fileKnobNodes = [i for i in nuke.allNodes(recurseGroups=True) if nukescripts.searchreplace.__NodeHasFileKnob(i)]
     return fileKnobNodes
 
-def searchReplaceProjDir():
-    fileKnobNodes = nodeWithFile()
+def searchReplaceProjDir(nodes):
     searchstr = str(nuke.root().knob('project_directory').evaluate() + "/")
     replacestr = ''
-    for f in fileKnobNodes:
+    for f in nodes:
         v = str(nuke.filename(f))
         repl = re.sub(searchstr, replacestr, v)
         f['file'].setValue(repl)
+
+def newUserKnob(knob, value):
+    knob.setValue(value)
+    return knob
+
+def selectNodesPanel():
+    p = nukescripts.PythonPanel('Conform file paths to Project Directory')
+    p.nodesSelection = nuke.Enumeration_Knob('nodesSel', 'Nodes selections', ['All nodes', 'Selected nodes only', 'Exclude selected nodes'])
+    p.checkReadGeo = newUserKnob(nuke.Boolean_Knob('checkReadGeo', 'Exclude ReadGeo nodes', '0'), 0)
+    p.readGeoText = nuke.Text_Knob('readGeoText', '', 'Will affect configured scenegraph')
+    for k in (p.nodesSelection, p.checkReadGeo, p.readGeoText):
+        k.setFlag(0x1000)
+        p.addKnob(k)
+
+    if p.showModalDialog():
+        if p.nodesSelection.value() == 'All nodes':
+            Sel = nodeWithFile()
+        elif p.nodesSelection.value() == 'Selected nodes only':
+            Sel = nuke.selectedNodes()
+        else:
+            Sel = nodeWithFile()
+            for i in nuke.selectedNodes():
+                try:
+                    Sel.remove(i)
+                except ValueError:
+                    pass
+
+        if p.checkReadGeo.value():
+            try:
+                for n in nuke.allNodes():
+                    if n.Class() == 'ReadGeo2':
+                        Sel.remove(n)
+            except ValueError:
+                pass
+
+        return Sel
+
 
 def setProjDir(var):
     if var == 0:
@@ -38,12 +74,12 @@ def setProjDir(var):
     else:
         filepath = '[join [lrange [split [file dirname [knob root.name]] "/"] 0 end-4] "/"]'
 
-    try:
-        absFilePaths(nodeWithFile())
-    except:
-        pass
+
     nuke.root().knob("project_directory").setValue(filepath)
-    searchReplaceProjDir()
+    try:
+        searchReplaceProjDir(selectNodesPanel())
+    except TypeError:
+        nuke.message('Project directory not set.')
 
 def absFilePathsSel():
     try:
