@@ -15,10 +15,16 @@ def nodeWithFile():
 def searchReplaceProjDir(nodes):
     searchstr = str(nuke.root().knob('project_directory').evaluate() + "/")
     replacestr = ''
-    for f in nodes:
-        v = str(nuke.filename(f))
-        repl = re.sub(searchstr, replacestr, v)
-        f['file'].setValue(repl)
+    try:
+        for f in nodes:
+            v = str(nuke.filename(f))
+            repl = re.sub(searchstr, replacestr, v)
+            try:
+                f['file'].setValue(repl)
+            except NameError:
+                pass
+    except TypeError:
+            nuke.message('Project directory set, no nodes selected for change')
 
 def newUserKnob(knob, value):
     knob.setValue(value)
@@ -76,10 +82,7 @@ def setProjDir(var):
 
 
     nuke.root().knob("project_directory").setValue(filepath)
-    try:
-        searchReplaceProjDir(selectNodesPanel())
-    except TypeError:
-        nuke.message('Project directory not set.')
+    searchReplaceProjDir(selectNodesPanel())
 
 def absFilePathsSel():
     try:
