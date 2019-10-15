@@ -80,9 +80,10 @@ def setProjDir(var):
     else:
         filepath = '[join [lrange [split [file dirname [knob root.name]] "/"] 0 end-4] "/"]'
 
-    absFilePaths(nodeWithFile())
+    changeNodes = selectNodesPanel()
+    absFilePaths(changeNodes)
     nuke.root().knob("project_directory").setValue(filepath)
-    searchReplaceProjDir(selectNodesPanel())
+    searchReplaceProjDir(changeNodes)
 
 
 def absFilePathsSel():
