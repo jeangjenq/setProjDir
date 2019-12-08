@@ -13,38 +13,45 @@ import nukescripts
 import os
 import re
 
+
 # function to accquire absolute file path from node
 def absFilePath(node):
     return str(nuke.filename(node))
+
 
 # function to accquire list of nodes with "file" knob
 def nodeWithFile(recurse):
     fileKnobNodes = [i for i in nuke.allNodes(recurseGroups=recurse) if nukescripts.searchreplace.__NodeHasFileKnob(i)]
     return fileKnobNodes
 
+
 # function to replace file path in node from absolute to relative, takes in (project path, node)
 def searchReplaceProjDir(projPath, node):
-    searchstr = projPath # accquire project path from input
+    searchstr = projPath  # accquire project path from input
     # make sure project path ends with "/"
     if not searchstr.endswith('/'):
         searchstr += '/'
     replacestr = ''
     v = absFilePath(node)
-    repl = re.sub(searchstr, replacestr, v) # new relative file path
+    repl = re.sub(searchstr, replacestr, v)  # new relative file path
     try:
         node['file'].setValue(repl)
     except NameError:
         pass
+
 
 # Create new user knob and set its default value in python panel
 def newUserKnob(knob, value):
     knob.setValue(value)
     return knob
 
+
 # Panel for user to select nodes to replace file paths
 def selectNodesPanel():
     p = nukescripts.PythonPanel('Conform file paths to Project Directory')
-    p.nodesSelection = newUserKnob(nuke.Enumeration_Knob('nodesSel', 'Nodes selections', ['All nodes', 'Selected nodes only', 'Exclude selected nodes']), 2)
+    p.nodesSelection = newUserKnob(nuke.Enumeration_Knob('nodesSel', 'Nodes selections',
+                                                         ['All nodes', 'Selected nodes only',
+                                                          'Exclude selected nodes']), 2)
     p.checkReadGeo = newUserKnob(nuke.Boolean_Knob('checkReadGeo', 'Exclude ReadGeo nodes', '0'), 0)
     p.readGeoText = nuke.Text_Knob('readGeoText', '', 'Will affect configured alembic scenegraph')
     p.div1 = nuke.Text_Knob('div1', '')
@@ -52,7 +59,7 @@ def selectNodesPanel():
     p.tclPath = newUserKnob(nuke.Boolean_Knob('checkTCL', 'Exclude TCL knobs', '0'), 1)
     for k in (p.checkReadGeo, p.readGeoText, p.div1, p.recurseGroups):
         k.setFlag(0x1000)
-    for k in (p.nodesSelection, p. checkReadGeo, p.readGeoText, p.div1, p.recurseGroups, p.tclPath):
+    for k in (p.nodesSelection, p.checkReadGeo, p.readGeoText, p.div1, p.recurseGroups, p.tclPath):
         p.addKnob(k)
 
     if p.showModalDialog():
@@ -87,6 +94,7 @@ def selectNodesPanel():
 
         return allNodes
 
+
 # function to start the setProjDir process, steps commented below
 def setProjDir(var):
     # launch selectNodesPanel first to acquire list of nodes to affect, if any
@@ -118,11 +126,11 @@ def setProjDir(var):
 
 # function to convert selected nodes' file path to absolute
 def absFilePathsSel():
-        try:
-            for n in nuke.selectedNodes():
-                n['file'].setValue(absFilePath(n))
-        except NameError:
-            nuke.message('No "file" knob found in selected nodes.')
+    try:
+        for n in nuke.selectedNodes():
+            n['file'].setValue(absFilePath(n))
+    except NameError:
+        nuke.message('No "file" knob found in selected nodes.')
 
 
 # function to select nodes with file knob
